@@ -9,6 +9,7 @@
 #import "ViewController.h"
 #import "ProductModel.h"
 #import "ProductViewCell.h"
+#import "ProductHeaderView.h"
 #import <XRCollectionViewFallLayout/XRCollectionViewFallLayout.h>
 
 @interface ViewController () <XRCollectionViewDelegateFallLayout>
@@ -31,7 +32,7 @@ static NSString *const Identifier2 = @"Cell2";
     //
     XRCollectionViewFallLayout *layout = [[XRCollectionViewFallLayout alloc] init];
     self.listTV.collectionViewLayout = layout;
-    [self.listTV registerClass:[UICollectionReusableView class]
+    [self.listTV registerClass:[ProductHeaderView class]
     forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
            withReuseIdentifier:Header];
 }
@@ -98,8 +99,8 @@ static NSString *const Identifier2 = @"Cell2";
 // The view that is returned must be retrieved from a call to -dequeueReusableSupplementaryViewOfKind:withReuseIdentifier:forIndexPath:
 - (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
     if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
-        UICollectionReusableView *view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:Header forIndexPath:indexPath ];
-        view.backgroundColor = [UIColor blueColor];
+        ProductHeaderView *view = (ProductHeaderView *)[collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:Header forIndexPath:indexPath ];
+        view.backgroundColor = [UIColor whiteColor];
         return view;
     }else {
         return nil;
@@ -161,7 +162,7 @@ static NSString *const Identifier2 = @"Cell2";
         return CGSizeZero;
     }else {
         CGSize size = [UIScreen mainScreen].bounds.size;
-        return CGSizeMake(size.width, 40.0);
+        return CGSizeMake(size.width, 50.0);
     }
 }
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForFooterInSection:(NSInteger)section {

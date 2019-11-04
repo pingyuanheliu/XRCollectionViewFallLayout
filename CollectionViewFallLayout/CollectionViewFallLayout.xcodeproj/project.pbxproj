@@ -18,6 +18,7 @@
 		6A9B2E54236BD413005FBEF1 /* XRCollectionViewFallLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 6A9B2E52236BD413005FBEF1 /* XRCollectionViewFallLayout.m */; };
 		6A9B2E57236C1942005FBEF1 /* ProductModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 6A9B2E56236C1942005FBEF1 /* ProductModel.m */; };
 		6A9B2E5A236C198E005FBEF1 /* ProductViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 6A9B2E59236C198E005FBEF1 /* ProductViewCell.m */; };
+		6ACBFB4F236FB7260007DE0B /* ProductHeaderView.m in Sources */ = {isa = PBXBuildFile; fileRef = 6ACBFB4E236FB7260007DE0B /* ProductHeaderView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -52,6 +53,8 @@
 		6A9B2E56236C1942005FBEF1 /* ProductModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProductModel.m; sourceTree = "<group>"; };
 		6A9B2E58236C198E005FBEF1 /* ProductViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProductViewCell.h; sourceTree = "<group>"; };
 		6A9B2E59236C198E005FBEF1 /* ProductViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProductViewCell.m; sourceTree = "<group>"; };
+		6ACBFB4D236FB7260007DE0B /* ProductHeaderView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ProductHeaderView.h; sourceTree = "<group>"; };
+		6ACBFB4E236FB7260007DE0B /* ProductHeaderView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProductHeaderView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +101,8 @@
 				6A9B2E2A236BD341005FBEF1 /* AppDelegate.m */,
 				6A9B2E2C236BD341005FBEF1 /* ViewController.h */,
 				6A9B2E2D236BD341005FBEF1 /* ViewController.m */,
+				6ACBFB4D236FB7260007DE0B /* ProductHeaderView.h */,
+				6ACBFB4E236FB7260007DE0B /* ProductHeaderView.m */,
 				6A9B2E55236C1942005FBEF1 /* ProductModel.h */,
 				6A9B2E56236C1942005FBEF1 /* ProductModel.m */,
 				6A9B2E58236C198E005FBEF1 /* ProductViewCell.h */,
@@ -233,6 +238,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6A9B2E2E236BD341005FBEF1 /* ViewController.m in Sources */,
+				6ACBFB4F236FB7260007DE0B /* ProductHeaderView.m in Sources */,
 				6A9B2E39236BD35E005FBEF1 /* main.m in Sources */,
 				6A9B2E2B236BD341005FBEF1 /* AppDelegate.m in Sources */,
 				6A9B2E5A236C198E005FBEF1 /* ProductViewCell.m in Sources */,

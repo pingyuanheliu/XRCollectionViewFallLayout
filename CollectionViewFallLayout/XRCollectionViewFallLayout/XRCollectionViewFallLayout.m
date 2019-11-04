@@ -8,6 +8,10 @@
 
 #import "XRCollectionViewFallLayout.h"
 
+@interface XRCollectionViewFallLayout ()
+
+@end
+
 @implementation XRCollectionViewFallLayout
 
 @end
