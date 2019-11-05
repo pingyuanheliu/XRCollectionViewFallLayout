@@ -174,7 +174,10 @@ static NSString *const Identifier = @"Cell";
 #pragma mark - UICollectionViewDelegate
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(didSelectedHeaderItem:)]) {
+        id item = self.listArray[indexPath.row];
+        [self.delegate didSelectedHeaderItem:item];
+    }
 }
 
 #pragma mark - UICollectionViewDelegateFlowLayout
@@ -184,7 +187,11 @@ static NSString *const Identifier = @"Cell";
     return CGSizeMake(width, collectionView.bounds.size.height);
 }
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
-    return UIEdgeInsetsZero;
+    if (section == 0) {
+        return UIEdgeInsetsZero;
+    }else {
+        return UIEdgeInsetsMake(5, 0, 5, 0);
+    }
 }
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
     return 0.0;

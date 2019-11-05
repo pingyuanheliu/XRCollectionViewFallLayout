@@ -12,7 +12,7 @@
 #import "ProductHeaderView.h"
 #import <XRCollectionViewFallLayout/XRCollectionViewFallLayout.h>
 
-@interface ViewController () <XRCollectionViewDelegateFallLayout>
+@interface ViewController () <XRCollectionViewDelegateFallLayout, ProductHeaderViewDelegate, UICollectionViewDelegateFlowLayout>
 
 @property (weak, nonatomic) IBOutlet UICollectionView *listTV;
 @property (strong, nonatomic) NSArray<ProductModel *> *listArray;
@@ -31,6 +31,9 @@ static NSString *const Identifier2 = @"Cell2";
     self.listArray = [self testArray];
     //
     XRCollectionViewFallLayout *layout = [[XRCollectionViewFallLayout alloc] init];
+    if (@available(iOS 9, *)) {
+        layout.sectionHeadersPinToVisibleBounds = YES;
+    }
     self.listTV.collectionViewLayout = layout;
     [self.listTV registerClass:[ProductHeaderView class]
     forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
@@ -66,10 +69,26 @@ static NSString *const Identifier2 = @"Cell2";
     return [tmpArray copy];
 }
 
+#pragma mark - ProductHeaderViewDelegate
+
+- (void)didSelectedHeaderItem:(id)item {
+    //刷新界面
+    self.listArray = [self testArray];
+    [self.listTV reloadData];
+//    __weak typeof(self) weakSelf = self;
+//    [UIView performWithoutAnimation:^{
+//        if (weakSelf.listTV.numberOfSections > 1) {
+//            [weakSelf.listTV reloadSections:[NSIndexSet indexSetWithIndex:1]];
+//        }
+//    }];
+}
+
 #pragma mark - UICollectionViewDataSource
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     if (section == 0) {
+        return 10;
+    }else if (section == 1) {
         return 10;
     }else {
         return self.listArray.count;
@@ -82,6 +101,10 @@ static NSString *const Identifier2 = @"Cell2";
         UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:Identifier1 forIndexPath:indexPath];
         cell.backgroundColor = [UIColor redColor];
         return cell;
+    }else if (indexPath.section == 1) {
+        UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:Identifier1 forIndexPath:indexPath];
+        cell.backgroundColor = [UIColor blueColor];
+        return cell;
     }else {
         ProductModel *model = self.listArray[indexPath.row];
         ProductViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:Identifier2 forIndexPath:indexPath];
@@ -93,7 +116,7 @@ static NSString *const Identifier2 = @"Cell2";
 
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
-    return 2;
+    return 3;
 }
 
 // The view that is returned must be retrieved from a call to -dequeueReusableSupplementaryViewOfKind:withReuseIdentifier:forIndexPath:
@@ -101,6 +124,7 @@ static NSString *const Identifier2 = @"Cell2";
     if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
         ProductHeaderView *view = (ProductHeaderView *)[collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:Header forIndexPath:indexPath ];
         view.backgroundColor = [UIColor whiteColor];
+        view.delegate = self;
         return view;
     }else {
         return nil;
@@ -121,17 +145,15 @@ static NSString *const Identifier2 = @"Cell2";
     CGSize sizeOfTitle = [model.title boundingRectWithSize:CGSizeMake(imgHeight, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:15.0]} context:nil].size;
     CGSize sizeOfIntro = [model.intro boundingRectWithSize:CGSizeMake(imgHeight, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:10.0]} context:nil].size;
     CGSize sizeOfPrice = CGSizeMake(imgHeight, 15.0);
-    NSLog(@"sizeOfPrice:%@",NSStringFromCGSize(sizeOfPrice));
     CGSize sizeOfSales = CGSizeMake(imgHeight, 15.0);
-    NSLog(@"sizeOfSales:%@",NSStringFromCGSize(sizeOfSales));
     CGFloat height;
     if (!model.tag) {
         height = 10.0 + imgHeight + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
     }else {
         height = 10.0 + imgHeight + 10.0 + 15.0 + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
     }
-    NSLog(@"height:%f",height);
     size = CGSizeMake((size.width - 35.0)/2.0, height);
+    NSLog(@"model price:%@==%@",model.price,NSStringFromCGSize(size));
     return size;
 }
 
@@ -139,26 +161,33 @@ static NSString *const Identifier2 = @"Cell2";
     CGSize size = [UIScreen mainScreen].bounds.size;
     if (indexPath.section == 0) {
         return CGSizeMake((size.width - 5.0)/2.0, 50.0);
+    }else if (indexPath.section == 1) {
+        return CGSizeMake((size.width - 5.0)/2.0, 50.0);
     }else {
         ProductModel *model = self.listArray[indexPath.row];
         return [self cx_cellSize:model];
     }
 }
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
+    NSLog(@"====[%@]", @(section));
     if (section == 0) {
         return UIEdgeInsetsZero;
+    }else if (section == 1) {
+        return UIEdgeInsetsMake(10, 0, 10, 0);
     }else {
         return UIEdgeInsetsMake(10, 15, 0, 15);
     }
 }
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
-    return 5.0;
+    return 10.0;
 }
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout minimumInteritemSpacingForSectionAtIndex:(NSInteger)section {
     return 5.0;
 }
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section {
     if (section == 0) {
+        return CGSizeZero;
+    }else if (section == 1) {
         return CGSizeZero;
     }else {
         CGSize size = [UIScreen mainScreen].bounds.size;

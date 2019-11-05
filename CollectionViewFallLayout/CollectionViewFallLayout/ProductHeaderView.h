@@ -10,7 +10,17 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol ProductHeaderViewDelegate <NSObject>
+
+@optional
+
+- (void)didSelectedHeaderItem:(id)item;
+
+@end
+
 @interface ProductHeaderView : UICollectionReusableView
+
+@property (nonatomic, weak, nullable) id <ProductHeaderViewDelegate>delegate;
 
 @end
 
