@@ -31,6 +31,7 @@ static NSString *const Identifier2 = @"Cell2";
     self.listArray = [self testArray];
     //
     XRCollectionViewFallLayout *layout = [[XRCollectionViewFallLayout alloc] init];
+//    layout.fallDelegate = self;
     if (@available(iOS 9, *)) {
         layout.sectionHeadersPinToVisibleBounds = YES;
     }
@@ -40,6 +41,7 @@ static NSString *const Identifier2 = @"Cell2";
            withReuseIdentifier:Header];
 }
 
+#pragma mark - Test Data
 - (NSArray<ProductModel *> *)testArray {
     NSMutableArray *tmpArray = [[NSMutableArray alloc] init];
     for (int i=0; i<14; i++) {
@@ -67,6 +69,24 @@ static NSString *const Identifier2 = @"Cell2";
         [tmpArray addObject:m];
     }
     return [tmpArray copy];
+}
+
+- (CGSize)cx_cellSize:(ProductModel *)model {
+    CGSize size = [UIScreen mainScreen].bounds.size;
+    CGFloat imgHeight = (size.width - 35.0)/2.0 - 20.0;
+    CGSize sizeOfTitle = [model.title boundingRectWithSize:CGSizeMake(imgHeight, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:15.0]} context:nil].size;
+    CGSize sizeOfIntro = [model.intro boundingRectWithSize:CGSizeMake(imgHeight, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:10.0]} context:nil].size;
+    CGSize sizeOfPrice = CGSizeMake(imgHeight, 15.0);
+    CGSize sizeOfSales = CGSizeMake(imgHeight, 15.0);
+    CGFloat height;
+    if (!model.tag) {
+        height = 10.0 + imgHeight + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
+    }else {
+        height = 10.0 + imgHeight + 10.0 + 15.0 + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
+    }
+    size = CGSizeMake((size.width - 35.0)/2.0, height);
+    NSLog(@"model price:%@==%@",model.price,NSStringFromCGSize(size));
+    return size;
 }
 
 #pragma mark - ProductHeaderViewDelegate
@@ -139,24 +159,6 @@ static NSString *const Identifier2 = @"Cell2";
 
 #pragma mark - UICollectionViewDelegateFlowLayout
 
-- (CGSize)cx_cellSize:(ProductModel *)model {
-    CGSize size = [UIScreen mainScreen].bounds.size;
-    CGFloat imgHeight = (size.width - 35.0)/2.0 - 20.0;
-    CGSize sizeOfTitle = [model.title boundingRectWithSize:CGSizeMake(imgHeight, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:15.0]} context:nil].size;
-    CGSize sizeOfIntro = [model.intro boundingRectWithSize:CGSizeMake(imgHeight, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:10.0]} context:nil].size;
-    CGSize sizeOfPrice = CGSizeMake(imgHeight, 15.0);
-    CGSize sizeOfSales = CGSizeMake(imgHeight, 15.0);
-    CGFloat height;
-    if (!model.tag) {
-        height = 10.0 + imgHeight + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
-    }else {
-        height = 10.0 + imgHeight + 10.0 + 15.0 + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
-    }
-    size = CGSizeMake((size.width - 35.0)/2.0, height);
-    NSLog(@"model price:%@==%@",model.price,NSStringFromCGSize(size));
-    return size;
-}
-
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     CGSize size = [UIScreen mainScreen].bounds.size;
     if (indexPath.section == 0) {
@@ -169,7 +171,6 @@ static NSString *const Identifier2 = @"Cell2";
     }
 }
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
-    NSLog(@"====[%@]", @(section));
     if (section == 0) {
         return UIEdgeInsetsZero;
     }else if (section == 1) {
@@ -196,6 +197,30 @@ static NSString *const Identifier2 = @"Cell2";
 }
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForFooterInSection:(NSInteger)section {
     return CGSizeZero;
+}
+
+#pragma mark - XRCollectionViewDelegateFallLayout
+
+// section是否使用瀑布流布局
+- (BOOL)xr_collectionView:(UICollectionView *)collectionView useFallInSection:(NSInteger)section {
+    if (section == 0) {
+        return NO;
+    }else if (section == 1) {
+        return NO;
+    }else if (section == 2) {
+        return YES;
+    }else {
+        return NO;
+    }
+}
+
+// collectionView是否在透明导航栏下面（默认透明）
+- (BOOL)xr_navigationBarTranslucent {
+    return self.navigationController.navigationBar.isTranslucent;
+}
+// section瀑布流列数(默认两列)
+- (NSInteger)xr_collectionView:(UICollectionView *)collectionView numberOfColumnInSection:(NSInteger)section {
+    return 2;
 }
 
 @end

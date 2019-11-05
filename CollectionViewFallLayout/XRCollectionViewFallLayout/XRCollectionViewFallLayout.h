@@ -11,10 +11,15 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol XRCollectionViewDelegateFallLayout <NSObject>
-@optional
+
+@required
 // section是否使用瀑布流布局
 - (BOOL)xr_collectionView:(UICollectionView *)collectionView useFallInSection:(NSInteger)section;
-// section瀑布流列数
+
+@optional
+// collectionView是否在透明导航栏下面（默认透明）
+- (BOOL)xr_navigationBarTranslucent;
+// section瀑布流列数(默认两列)
 - (NSInteger)xr_collectionView:(UICollectionView *)collectionView numberOfColumnInSection:(NSInteger)section;
 
 @end

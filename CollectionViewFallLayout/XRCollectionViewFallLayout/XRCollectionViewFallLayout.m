@@ -20,20 +20,16 @@
 /*
  [
      {
-     "header":"0.0",
-     "max":"0.0",
-     "min":"0.0",
-     "height":"0.0",
-     "footer":"0.0",
-     "items":[@(),@()]
+     "headerBeginY":"0.0",
+     "footerBeginY":"0.0",
+     "maxHeight":"0.0",
+     "items":[@(rect),@(rect)]
      },
      {
-     "header":"0.0",
-     "max":"0.0",
-     "min":"0.0",
-     "height":"0.0",
-     "footer":"0.0",
-     "items":[@(),@()]
+     "headerBeginY":"0.0",
+     "footerBeginY":"0.0",
+     "maxHeight":"0.0",
+     "items":[@(rect),@(rect)]
      },
  ]
  */
@@ -53,6 +49,23 @@
         self.prepareArray = [[NSMutableArray alloc] init];
     }
     return self;
+}
+
+#pragma mark - Get
+
+/**
+ 瀑布流的代理
+ 如果为空，则默认返回UICollectionViewDelegate
+
+ @return 代理
+ */
+- (id<XRCollectionViewDelegateFallLayout>)fallDelegate {
+    if (_fallDelegate == nil) {
+        id<XRCollectionViewDelegateFallLayout> delegate = (id<XRCollectionViewDelegateFallLayout>)self.collectionView.delegate;
+        return delegate;
+    }else {
+        return _fallDelegate;
+    }
 }
 
 #pragma mark - Method
@@ -116,21 +129,16 @@
             }];
         }
         for (UICollectionViewLayoutAttributes *attrItem in superArray) {
-            BOOL useWaterFall;
-            if (attrItem.indexPath.section < 2) {
-                useWaterFall = NO;
-            }else {
-                useWaterFall = YES;
-            }
+            BOOL useWaterFall = [self useFallInSection:attrItem.indexPath.section];
             // section header
             if (!useSystem && [attrItem.representedElementKind isEqualToString:UICollectionElementKindSectionHeader] && attrItem.indexPath.section == 5) {
                 //滑动偏移
                 CGFloat offset;
-                if (![self cx_navigationBarTranslucent]) {
+                if (![self navigationBarTranslucent]) {
                     offset = self.collectionView.contentOffset.y;
                 }else {
                     if (@available(iOS 11.0, *)) {
-                        UIEdgeInsets insets = [[UIApplication sharedApplication] keyWindow].safeAreaInsets;
+                        UIEdgeInsets insets = [[UIApplication sharedApplication] delegate].window.safeAreaInsets;
                         offset = self.collectionView.contentOffset.y + MAX(insets.top, 20.0) + 44.0;
                     }else {
                         offset = self.collectionView.contentOffset.y + 64.0;
@@ -182,12 +190,6 @@
 
 #pragma mark - Private Methods
 
-- (BOOL)cx_navigationBarTranslucent {
-    BOOL translucent = YES;
-
-    return translucent;
-}
-
 - (void)beginOffsetYOfSection:(NSInteger)section {
     CGFloat offsetY = 0.0;
     CGFloat lastY = 0.0;
@@ -228,22 +230,26 @@
             //item
             NSMutableArray *array = [[NSMutableArray alloc] init];
             NSMutableArray *tmpHeight = [[NSMutableArray alloc] init];
-            [tmpHeight addObject:[NSNumber numberWithFloat:0.0]];
-            [tmpHeight addObject:[NSNumber numberWithFloat:0.0]];
+            NSInteger column = [self numberOfColumnInSection:i];
+            for (NSInteger k=0; k<column; k++) {
+                [tmpHeight addObject:[NSNumber numberWithFloat:0.0]];
+            }
             for (NSInteger j=0; j<items; j++) {
                 @autoreleasepool {
                     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:j inSection:i];
                     UICollectionViewLayoutAttributes *attrItem = [self layoutAttributesForItemAtIndexPath:indexPath];
                     if (attrItem != nil && !CGSizeEqualToSize(attrItem.size, CGSizeZero)) {
-                        if (i < 2) {
+                        if (![self useFallInSection:i]) {
+                            //没有使用瀑布流，使用默认布局
                             [array addObject:NSStringFromCGRect(attrItem.frame)];
                         }else {
+                            //使用瀑布流
                             id imin = [tmpHeight valueForKeyPath:@"@min.self"];
                             CGFloat min = [imin floatValue];
                             NSLog(@"=A=[%@]min:%f==%f==%f", @(j), min, lastY, offsetY);
                             CGRect rect = attrItem.frame;
                             NSInteger index = [tmpHeight indexOfObject:imin];
-                            if (index != j%2) {
+                            if (index != j%column) {
                                 if (index == 0) {
                                     rect.origin.x = insets.left;
                                 }else {
@@ -285,17 +291,50 @@
     NSLog(@"offsetY[%@]:%f=%@",@(section),offsetY,self.prepareArray);
 }
 
+#pragma mark - Delegate Method
+
+- (BOOL)navigationBarTranslucent {
+    BOOL translucent;
+    if (self.fallDelegate != nil && [self.fallDelegate respondsToSelector:@selector(xr_navigationBarTranslucent)]) {
+        translucent = [self.fallDelegate xr_navigationBarTranslucent];
+    }else {
+        translucent = YES;
+    }
+    return translucent;
+}
+
+- (BOOL)useFallInSection:(NSInteger)section {
+    BOOL used;
+    if (self.fallDelegate != nil && [self.fallDelegate respondsToSelector:@selector(xr_collectionView:useFallInSection:)]) {
+        used = [self.fallDelegate xr_collectionView:self.collectionView useFallInSection:section];
+    }else {
+        used = NO;
+    }
+    NSLog(@"useFallInSection[%@]:%@",@(section),@(used));
+    return used;
+}
+
+- (NSInteger)numberOfColumnInSection:(NSInteger)section {
+    NSInteger column;
+    if (self.fallDelegate != nil && [self.fallDelegate respondsToSelector:@selector(xr_collectionView:numberOfColumnInSection:)]) {
+        column = [self.fallDelegate xr_collectionView:self.collectionView numberOfColumnInSection:section];
+        column = column > 2 ? column : 2;
+    }else {
+        column = 2;
+    }
+    return column;
+}
+
+#pragma mark -
+
 - (UIEdgeInsets)insetForSectionAtIndex:(NSInteger)section {
-    NSLog(@"==1[%@]==%@=",@(section),self.collectionView.delegate);
     UIEdgeInsets inset;
     id<UICollectionViewDelegateFlowLayout> delegate = (id<UICollectionViewDelegateFlowLayout>)self.collectionView.delegate;
     if (delegate != nil && [delegate respondsToSelector:@selector(collectionView:layout:insetForSectionAtIndex:)]) {
-        NSLog(@"==2==%@",self.collectionView.delegate);
         inset = [delegate collectionView:self.collectionView layout:self insetForSectionAtIndex:section];
     }else {
         inset = self.sectionInset;
     }
-    NSLog(@"==3==%@",NSStringFromUIEdgeInsets(inset));
     return inset;
 }
 
