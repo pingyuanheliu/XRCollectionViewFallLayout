@@ -23,6 +23,7 @@ static NSString *const Header1 = @"Header1";
 static NSString *const Header2 = @"Header2";
 static NSString *const Identifier1 = @"Cell1";
 static NSString *const Identifier2 = @"Cell2";
+static NSString *const Footer1 = @"Footer1";
 
 @implementation ViewController
 
@@ -32,9 +33,9 @@ static NSString *const Identifier2 = @"Cell2";
     self.listArray = [self testArray];
     //
     XRCollectionViewFallLayout *layout = [[XRCollectionViewFallLayout alloc] init];
-    if (@available(iOS 9, *)) {
-        layout.sectionHeadersPinToVisibleBounds = YES;
-    }
+//    if (@available(iOS 9, *)) {
+//        layout.sectionHeadersPinToVisibleBounds = YES;
+//    }
     self.listTV.collectionViewLayout = layout;
     [self.listTV registerClass:[ProductHeaderView class]
     forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
@@ -42,6 +43,9 @@ static NSString *const Identifier2 = @"Cell2";
     [self.listTV registerClass:[UICollectionReusableView class]
     forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
            withReuseIdentifier:Header2];
+    [self.listTV registerClass:[UICollectionReusableView class]
+    forSupplementaryViewOfKind:UICollectionElementKindSectionFooter
+           withReuseIdentifier:Footer1];
 }
 
 #pragma mark - Test Data
@@ -76,18 +80,22 @@ static NSString *const Identifier2 = @"Cell2";
 
 - (CGSize)cx_cellSize:(ProductModel *)model {
     CGSize size = [UIScreen mainScreen].bounds.size;
-    CGFloat imgHeight = (size.width - 35.0)/2.0 - 20.0;
-    CGSize sizeOfTitle = [model.title boundingRectWithSize:CGSizeMake(imgHeight, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:15.0]} context:nil].size;
-    CGSize sizeOfIntro = [model.intro boundingRectWithSize:CGSizeMake(imgHeight, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:10.0]} context:nil].size;
-    CGSize sizeOfPrice = CGSizeMake(imgHeight, 15.0);
-    CGSize sizeOfSales = CGSizeMake(imgHeight, 15.0);
+    // 宽度向下取整
+    CGFloat cellWidth = floor((size.width - 35.0)/2.0);
+    CGFloat imgWidth = cellWidth - 20.0;
+    CGSize sizeOfTitle = [model.title boundingRectWithSize:CGSizeMake(imgWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:15.0]} context:nil].size;
+    CGSize sizeOfIntro = [model.intro boundingRectWithSize:CGSizeMake(imgWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:10.0]} context:nil].size;
+    CGSize sizeOfPrice = CGSizeMake(imgWidth, 15.0);
+    CGSize sizeOfSales = CGSizeMake(imgWidth, 15.0);
     CGFloat height;
     if (!model.tag) {
-        height = 10.0 + imgHeight + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
+        height = 10.0 + imgWidth + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
     }else {
-        height = 10.0 + imgHeight + 10.0 + 15.0 + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
+        height = 10.0 + imgWidth + 10.0 + 15.0 + 10.0 + sizeOfTitle.height + 10.0 + sizeOfIntro.height + 10.0 + sizeOfPrice.height + 5.0 + sizeOfSales.height + 10.0;
     }
-    size = CGSizeMake((size.width - 35.0)/2.0, height);
+    // 高度度向上取整
+    height = ceil(height);
+    size = CGSizeMake(cellWidth, height);
     NSLog(@"model price:%@==%@",model.price,NSStringFromCGSize(size));
     return size;
 }
@@ -160,6 +168,10 @@ static NSString *const Identifier2 = @"Cell2";
             view.backgroundColor = [UIColor colorWithRed:0xE0/255.0 green:0xF0/255.0 blue:0xF0/255.0 alpha:1.0];
             return view;
         }
+    }else if ([kind isEqualToString:UICollectionElementKindSectionFooter]) {
+        UICollectionReusableView *view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:Footer1 forIndexPath:indexPath];
+        view.backgroundColor = [UIColor colorWithRed:0xF0/255.0 green:0xE0/255.0 blue:0xF0/255.0 alpha:1.0];
+        return view;
     }else {
         return nil;
     }
@@ -217,7 +229,16 @@ static NSString *const Identifier2 = @"Cell2";
     }
 }
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForFooterInSection:(NSInteger)section {
-    return CGSizeZero;
+    if (section == 0) {
+        return CGSizeZero;
+    }else if (section == 1) {
+        return CGSizeZero;
+    }else if (section == 2) {
+        CGSize size = [UIScreen mainScreen].bounds.size;
+        return CGSizeMake(size.width, 10.0);
+    }else {
+        return CGSizeZero;
+    }
 }
 
 #pragma mark - XRCollectionViewDelegateFallLayout

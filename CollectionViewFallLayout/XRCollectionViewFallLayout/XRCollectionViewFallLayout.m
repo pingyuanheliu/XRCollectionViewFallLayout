@@ -68,7 +68,7 @@
     }
 }
 
-#pragma mark - Method
+#pragma mark - OverWrite Method
 
 - (void)prepareLayout {
     [super prepareLayout];
@@ -129,33 +129,51 @@
             }];
         }
         for (UICollectionViewLayoutAttributes *attrItem in superArray) {
-            BOOL useWaterFall = [self useFallInSection:attrItem.indexPath.section];
-            // section header
-            if (!useSystem && [attrItem.representedElementKind isEqualToString:UICollectionElementKindSectionHeader] && attrItem.indexPath.section == 5) {
-                //滑动偏移
-                CGFloat offset;
-                if (![self navigationBarTranslucent]) {
-                    offset = self.collectionView.contentOffset.y;
-                }else {
-                    if (@available(iOS 11.0, *)) {
-                        UIEdgeInsets insets = [[UIApplication sharedApplication] delegate].window.safeAreaInsets;
-                        offset = self.collectionView.contentOffset.y + MAX(insets.top, 20.0) + 44.0;
+            NSInteger section = attrItem.indexPath.section;
+            if (attrItem.representedElementKind != nil) {
+                // Section Header
+                if ([attrItem.representedElementKind isEqualToString:UICollectionElementKindSectionHeader]) {
+                    //取最大
+                    CGFloat beginY = [[self.prepareArray[section] objectForKey:kHeaderBeginY] floatValue];
+                    if (useSystem) {
+                        NSLog(@"beginY1[%@]:%f",@(section),beginY);
+                        //获取当前header的frame
+                        CGRect irect = attrItem.frame;
+                        irect.origin.y = beginY;
+                        attrItem.frame = irect;
+                        attrItem.zIndex = 1024;
                     }else {
-                        offset = self.collectionView.contentOffset.y + 64.0;
+                        NSLog(@"beginY2[%@]:%f",@(section),beginY);
+                        //滑动偏移
+                        CGFloat offset;
+                        if (![self navigationBarTranslucent]) {
+                            offset = self.collectionView.contentOffset.y;
+                        }else {
+                            if (@available(iOS 11.0, *)) {
+                                UIEdgeInsets insets = [[UIApplication sharedApplication] delegate].window.safeAreaInsets;
+                                offset = self.collectionView.contentOffset.y + MAX(insets.top, 20.0) + 44.0;
+                            }else {
+                                offset = self.collectionView.contentOffset.y + 64.0;
+                            }
+                        }
+                        //取最大
+                        CGFloat maxY = MAX(offset, beginY);
+                        //获取当前header的frame
+                        CGRect irect = attrItem.frame;
+                        irect.origin.y = maxY;
+                        attrItem.frame = irect;
+                        attrItem.zIndex = 1024;
                     }
+                }else {
+                    // Section Footer
+                    CGFloat beginY = [[self.prepareArray[section] objectForKey:kFooterBeginY] floatValue];
+                    CGRect irect = attrItem.frame;
+                    irect.origin.y = beginY;
+                    attrItem.frame = irect;
                 }
-                //取最大
-                CGFloat beginY = [[self.prepareArray[attrItem.indexPath.section] objectForKey:kHeaderBeginY] floatValue];
-                CGFloat maxY = MAX(offset, beginY);
-                //获取当前header的frame
-                CGRect irect = attrItem.frame;
-                irect.origin.y = maxY;
-                attrItem.frame = irect;
-                attrItem.zIndex = 1024;
-            }
-            // cell
-            if (useWaterFall && attrItem.representedElementKind == nil) {
-                id items = self.prepareArray[attrItem.indexPath.section];
+            }else {
+                // Section Cells
+                id items = self.prepareArray[section];
                 attrItem.frame = CGRectFromString([items[kItems] objectAtIndex:attrItem.indexPath.row]);
             }
         }
@@ -213,11 +231,11 @@
             }else {
                 lastY = 0.0;
             }
+            [dict setValue:[NSNumber numberWithFloat:lastY] forKey:kHeaderBeginY];
             offsetY = 0.0;
             //
             NSInteger items = [self.collectionView numberOfItemsInSection:i];
             if (items == 0) {
-                [dict setValue:[NSNumber numberWithFloat:lastY + offsetY] forKey:kHeaderBeginY];
                 [self.prepareArray replaceObjectAtIndex:i withObject:[dict copy]];
                 continue;
             }
@@ -225,10 +243,10 @@
             NSIndexPath *fIndexPath = [NSIndexPath indexPathForItem:0 inSection:i];
             //Header
             UICollectionViewLayoutAttributes *attrHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:fIndexPath];
+            NSLog(@"attrHeader[%@]:%@",@(i),NSStringFromCGRect(attrHeader.frame));
             if (attrHeader != nil && !CGSizeEqualToSize(attrHeader.size, CGSizeZero)) {
                 offsetY += attrHeader.frame.size.height;
             }
-            [dict setValue:[NSNumber numberWithFloat:lastY + offsetY] forKey:kHeaderBeginY];
             //边界
             UIEdgeInsets insets = [self insetForSectionAtIndex:i];
             //top
@@ -248,7 +266,9 @@
                     if (attrItem != nil && !CGSizeEqualToSize(attrItem.size, CGSizeZero)) {
                         if (![self useFallInSection:i]) {
                             //没有使用瀑布流，使用默认布局
-                            [array addObject:NSStringFromCGRect(attrItem.frame)];
+                            CGRect rect = attrItem.frame;
+                            rect.origin.y -= (attrHeader.frame.origin.y - lastY);
+                            [array addObject:NSStringFromCGRect(rect)];
                             lastIndex = j;
                         }else {
                             //使用瀑布流
@@ -287,7 +307,7 @@
                 NSIndexPath *lIndexPath = [NSIndexPath indexPathForItem:lastIndex inSection:i];
                 UICollectionViewLayoutAttributes *attrItem = [self layoutAttributesForItemAtIndexPath:lIndexPath];
                 if (attrItem != nil && !CGSizeEqualToSize(attrItem.size, CGSizeZero)) {
-                    offsetY += attrItem.frame.origin.y + attrItem.frame.size.height - insets.top;
+                    offsetY = attrItem.frame.origin.y + attrItem.frame.size.height;
                 }
             }else {
                 CGFloat maxH = 0.0;
@@ -296,7 +316,7 @@
                     CGFloat tHeight = tRect.origin.y + tRect.size.height;
                     maxH = tHeight > maxH ? tHeight : maxH;
                 }
-                offsetY += maxH;
+                offsetY = maxH;
             }
             
             //bottom
@@ -307,7 +327,7 @@
             if (attrFooter != nil && !CGSizeEqualToSize(attrFooter.size, CGSizeZero)) {
                 offsetY += attrFooter.frame.size.height;
             }
-            NSLog(@"offsetY[%@]:%f",@(i),offsetY);
+            NSLog(@"offsetY[%@]:%@==%f",@(i),@(lastIndex),offsetY);
             [dict setValue:[NSNumber numberWithFloat:offsetY] forKey:kMaxHeight];
             [self.prepareArray replaceObjectAtIndex:i withObject:[dict copy]];
         }
