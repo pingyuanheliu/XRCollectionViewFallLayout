@@ -19,7 +19,8 @@
 
 @end
 
-static NSString *const Header = @"Header";
+static NSString *const Header1 = @"Header1";
+static NSString *const Header2 = @"Header2";
 static NSString *const Identifier1 = @"Cell1";
 static NSString *const Identifier2 = @"Cell2";
 
@@ -31,20 +32,22 @@ static NSString *const Identifier2 = @"Cell2";
     self.listArray = [self testArray];
     //
     XRCollectionViewFallLayout *layout = [[XRCollectionViewFallLayout alloc] init];
-//    layout.fallDelegate = self;
     if (@available(iOS 9, *)) {
         layout.sectionHeadersPinToVisibleBounds = YES;
     }
     self.listTV.collectionViewLayout = layout;
     [self.listTV registerClass:[ProductHeaderView class]
     forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
-           withReuseIdentifier:Header];
+           withReuseIdentifier:Header1];
+    [self.listTV registerClass:[UICollectionReusableView class]
+    forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
+           withReuseIdentifier:Header2];
 }
 
 #pragma mark - Test Data
 - (NSArray<ProductModel *> *)testArray {
     NSMutableArray *tmpArray = [[NSMutableArray alloc] init];
-    for (int i=0; i<14; i++) {
+    for (int i=0; i<3; i++) {
         int length = rand()%5 + 1;
         NSMutableString *msTitle = [[NSMutableString alloc] init];
         for (int j=0; j<length; j++) {
@@ -95,12 +98,12 @@ static NSString *const Identifier2 = @"Cell2";
     //刷新界面
     self.listArray = [self testArray];
     [self.listTV reloadData];
-//    __weak typeof(self) weakSelf = self;
-//    [UIView performWithoutAnimation:^{
-//        if (weakSelf.listTV.numberOfSections > 1) {
-//            [weakSelf.listTV reloadSections:[NSIndexSet indexSetWithIndex:1]];
-//        }
-//    }];
+    __weak typeof(self) weakSelf = self;
+    [UIView performWithoutAnimation:^{
+        if (weakSelf.listTV.numberOfSections > 1) {
+            [weakSelf.listTV reloadSections:[NSIndexSet indexSetWithIndex:1]];
+        }
+    }];
 }
 
 #pragma mark - UICollectionViewDataSource
@@ -110,8 +113,10 @@ static NSString *const Identifier2 = @"Cell2";
         return 10;
     }else if (section == 1) {
         return 10;
-    }else {
+    }else if (section == 2) {
         return self.listArray.count;
+    }else {
+        return 10;
     }
 }
 
@@ -125,27 +130,36 @@ static NSString *const Identifier2 = @"Cell2";
         UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:Identifier1 forIndexPath:indexPath];
         cell.backgroundColor = [UIColor blueColor];
         return cell;
-    }else {
+    }else if (indexPath.section == 2) {
         ProductModel *model = self.listArray[indexPath.row];
         ProductViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:Identifier2 forIndexPath:indexPath];
         [cell updateData:model];
         cell.backgroundColor = [UIColor yellowColor];
+        return cell;
+    }else {
+        UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:Identifier1 forIndexPath:indexPath];
+        cell.backgroundColor = [UIColor greenColor];
         return cell;
     }
 }
 
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
-    return 3;
+    return 4;
 }
 
 // The view that is returned must be retrieved from a call to -dequeueReusableSupplementaryViewOfKind:withReuseIdentifier:forIndexPath:
 - (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
     if ([kind isEqualToString:UICollectionElementKindSectionHeader]) {
-        ProductHeaderView *view = (ProductHeaderView *)[collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:Header forIndexPath:indexPath ];
-        view.backgroundColor = [UIColor whiteColor];
-        view.delegate = self;
-        return view;
+        if (indexPath.section == 2) {
+            ProductHeaderView *view = (ProductHeaderView *)[collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:Header1 forIndexPath:indexPath ];
+            view.delegate = self;
+            return view;
+        }else {
+            UICollectionReusableView *view = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:Header2 forIndexPath:indexPath];
+            view.backgroundColor = [UIColor colorWithRed:0xE0/255.0 green:0xF0/255.0 blue:0xF0/255.0 alpha:1.0];
+            return view;
+        }
     }else {
         return nil;
     }
@@ -165,9 +179,11 @@ static NSString *const Identifier2 = @"Cell2";
         return CGSizeMake((size.width - 5.0)/2.0, 50.0);
     }else if (indexPath.section == 1) {
         return CGSizeMake((size.width - 5.0)/2.0, 50.0);
-    }else {
+    }else if (indexPath.section == 2) {
         ProductModel *model = self.listArray[indexPath.row];
         return [self cx_cellSize:model];
+    }else {
+        return CGSizeMake((size.width - 5.0)/2.0, 50.0);
     }
 }
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
@@ -175,8 +191,10 @@ static NSString *const Identifier2 = @"Cell2";
         return UIEdgeInsetsZero;
     }else if (section == 1) {
         return UIEdgeInsetsMake(10, 0, 10, 0);
+    }else if (section == 2) {
+        return UIEdgeInsetsMake(10, 15, 10, 15);
     }else {
-        return UIEdgeInsetsMake(10, 15, 0, 15);
+        return UIEdgeInsetsZero;
     }
 }
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
@@ -190,6 +208,9 @@ static NSString *const Identifier2 = @"Cell2";
         return CGSizeZero;
     }else if (section == 1) {
         return CGSizeZero;
+    }else if (section == 2) {
+        CGSize size = [UIScreen mainScreen].bounds.size;
+        return CGSizeMake(size.width, 50.0);
     }else {
         CGSize size = [UIScreen mainScreen].bounds.size;
         return CGSizeMake(size.width, 50.0);

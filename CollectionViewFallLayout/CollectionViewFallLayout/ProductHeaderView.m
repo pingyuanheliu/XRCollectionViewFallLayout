@@ -105,7 +105,7 @@ static NSString *const Identifier = @"Cell";
         flowLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
         //
         _listView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:flowLayout];
-        _listView.backgroundColor = [UIColor whiteColor];
+        _listView.backgroundColor = [UIColor colorWithRed:0xE0/255.0 green:0xF0/255.0 blue:0xF0/255.0 alpha:1.0];
         _listView.dataSource = self;
         _listView.delegate = self;
         _listView.bounces = YES;
@@ -160,7 +160,6 @@ static NSString *const Identifier = @"Cell";
 // The cell that is returned must be retrieved from a call to -dequeueReusableCellWithReuseIdentifier:forIndexPath:
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     ProductHeaderCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:Identifier forIndexPath:indexPath];
-    cell.backgroundColor = [UIColor whiteColor];
     id item = self.listArray[indexPath.row];
     id name = item[@"name"];
     if (name != nil && [name isKindOfClass:[NSString class]]) {

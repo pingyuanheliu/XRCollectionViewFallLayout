@@ -176,7 +176,13 @@
 #pragma mark -
 
 - (CGSize)collectionViewContentSize {
-    return [super collectionViewContentSize];
+    id last = [self.prepareArray lastObject];
+    CGFloat height = [last[kMaxHeight] floatValue];
+    CGSize size = [super collectionViewContentSize];
+    NSLog(@"size1:%@",NSStringFromCGSize(size));
+    size.height = height;
+    NSLog(@"size2:%@",NSStringFromCGSize(size));
+    return size;
 }
 
 - (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds {
@@ -234,6 +240,7 @@
             for (NSInteger k=0; k<column; k++) {
                 [tmpHeight addObject:[NSNumber numberWithFloat:0.0]];
             }
+            NSInteger lastIndex = -1;
             for (NSInteger j=0; j<items; j++) {
                 @autoreleasepool {
                     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:j inSection:i];
@@ -242,6 +249,7 @@
                         if (![self useFallInSection:i]) {
                             //没有使用瀑布流，使用默认布局
                             [array addObject:NSStringFromCGRect(attrItem.frame)];
+                            lastIndex = j;
                         }else {
                             //使用瀑布流
                             id imin = [tmpHeight valueForKeyPath:@"@min.self"];
@@ -256,7 +264,11 @@
                                     rect.origin.x = insets.left + index*(attrItem.frame.size.width + [self minimumInteritemSpacingForSectionAtIndex:i]);
                                 }
                             }
-                            rect.origin.y = lastY + offsetY + min;
+                            if (j < column) {
+                                rect.origin.y = lastY + offsetY + min;
+                            }else {
+                                rect.origin.y = lastY + offsetY + min;
+                            }
                             [array addObject:NSStringFromCGRect(rect)];
                             min += rect.size.height + [self minimumLineSpacingForSectionAtIndex:i];
                             NSLog(@"=B=[%@]min:%f==%@", @(j), min, NSStringFromCGRect(rect));
@@ -265,16 +277,28 @@
                         NSLog(@"=C=%@",tmpHeight);
                     }else {
                         [array addObject:NSStringFromCGRect(CGRectZero)];
+                        lastIndex = j;
                     }
                 }
             }
             [dict setValue:array forKey:kItems];
-            //最后一个item
-            NSIndexPath *lIndexPath = [NSIndexPath indexPathForItem:items-1 inSection:i];
-            UICollectionViewLayoutAttributes *attrItem = [self layoutAttributesForItemAtIndexPath:lIndexPath];
-            if (attrItem != nil && !CGSizeEqualToSize(attrItem.size, CGSizeZero)) {
-                offsetY += attrItem.frame.origin.y + attrItem.frame.size.height;
+            if (lastIndex != -1) {
+                //最后一个item
+                NSIndexPath *lIndexPath = [NSIndexPath indexPathForItem:lastIndex inSection:i];
+                UICollectionViewLayoutAttributes *attrItem = [self layoutAttributesForItemAtIndexPath:lIndexPath];
+                if (attrItem != nil && !CGSizeEqualToSize(attrItem.size, CGSizeZero)) {
+                    offsetY += attrItem.frame.origin.y + attrItem.frame.size.height - insets.top;
+                }
+            }else {
+                CGFloat maxH = 0.0;
+                for (NSString *string in array) {
+                    CGRect tRect = CGRectFromString(string);
+                    CGFloat tHeight = tRect.origin.y + tRect.size.height;
+                    maxH = tHeight > maxH ? tHeight : maxH;
+                }
+                offsetY += maxH;
             }
+            
             //bottom
             offsetY += insets.bottom;
             [dict setValue:[NSNumber numberWithFloat:offsetY] forKey:kFooterBeginY];
@@ -310,7 +334,6 @@
     }else {
         used = NO;
     }
-    NSLog(@"useFallInSection[%@]:%@",@(section),@(used));
     return used;
 }
 
@@ -335,6 +358,7 @@
     }else {
         inset = self.sectionInset;
     }
+    NSLog(@"inset[%@]:%@",@(section),NSStringFromUIEdgeInsets(inset));
     return inset;
 }
 
