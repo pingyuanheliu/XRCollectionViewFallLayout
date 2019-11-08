@@ -69,6 +69,16 @@
 
 @end
 
+@interface ProductHeaderViewLayer : CALayer
+@end
+
+@implementation ProductHeaderViewLayer
+
+- (CGFloat)zPosition {
+    return 0;
+}
+@end
+
 @interface ProductHeaderView ()<UICollectionViewDataSource, UICollectionViewDelegate>
 
 @property (nonatomic, strong) UICollectionView *listView;
@@ -79,6 +89,17 @@
 @implementation ProductHeaderView
 
 static NSString *const Identifier = @"Cell";
+
+#pragma mark - Layer
+
++ (Class)layerClass {
+    // iOS 11.0以上系统如果不从新定义Layer，滚动条会显示在Hader下方
+    if (@available(iOS 11.0, *)) {
+        return [ProductHeaderViewLayer class];
+    }else {
+        return [super layerClass];
+    }
+}
 
 #pragma mark - Life Cycle
 

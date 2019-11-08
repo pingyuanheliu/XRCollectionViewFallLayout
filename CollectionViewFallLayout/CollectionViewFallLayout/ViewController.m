@@ -124,7 +124,7 @@ static NSString *const Footer1 = @"Footer1";
     }else if (section == 2) {
         return self.listArray.count;
     }else {
-        return 10;
+        return 30;
     }
 }
 
