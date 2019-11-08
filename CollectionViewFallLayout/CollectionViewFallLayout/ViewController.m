@@ -36,6 +36,7 @@ static NSString *const Footer1 = @"Footer1";
 //    if (@available(iOS 9, *)) {
 //        layout.sectionHeadersPinToVisibleBounds = YES;
 //    }
+    layout.suspendHeader = YES;
     self.listTV.collectionViewLayout = layout;
     [self.listTV registerClass:[ProductHeaderView class]
     forSupplementaryViewOfKind:UICollectionElementKindSectionHeader
@@ -224,8 +225,9 @@ static NSString *const Footer1 = @"Footer1";
         CGSize size = [UIScreen mainScreen].bounds.size;
         return CGSizeMake(size.width, 50.0);
     }else {
-        CGSize size = [UIScreen mainScreen].bounds.size;
-        return CGSizeMake(size.width, 50.0);
+        return CGSizeZero;
+//        CGSize size = [UIScreen mainScreen].bounds.size;
+//        return CGSizeMake(size.width, 50.0);
     }
 }
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForFooterInSection:(NSInteger)section {
