@@ -75,149 +75,9 @@
     NSLog(@"==prepareLayout==");
     [self.prepareArray removeAllObjects];
     NSInteger sections = [self.collectionView numberOfSections];
-    [self beginOffsetYOfSection:sections];
-}
-
-#pragma mark -
-
-- (nullable NSArray<__kindof UICollectionViewLayoutAttributes *> *)layoutAttributesForElementsInRect:(CGRect)rect {
-    NSArray *array = [super layoutAttributesForElementsInRect:rect];
-    NSMutableArray *superArray = [[NSMutableArray alloc] initWithArray:array copyItems:YES];
-    @autoreleasepool {
-        BOOL useSystem;
-        if (@available(iOS 9, *)) {
-            //导航栏不透明
-            if (self.sectionHeadersPinToVisibleBounds) {
-                useSystem = YES;
-            }else {
-                useSystem = NO;
-            }
-        }else {
-            useSystem = NO;
-        }
-        if (!useSystem) {
-            //创建存索引的数组，无符号（正整数），无序（不能通过下标取值），不可重复（重复的话会自动过滤）
-            NSMutableIndexSet *noneHeaderSections = [NSMutableIndexSet indexSet];
-            //遍历superArray，得到一个当前屏幕中所有的section数组
-            for (UICollectionViewLayoutAttributes *attributes in superArray) {
-                //如果当前的元素分类是一个cell，将cell所在的分区section加入数组，重复的话会自动过滤
-                if (attributes.representedElementCategory == UICollectionElementCategoryCell) {
-                    [noneHeaderSections addIndex:attributes.indexPath.section];
-                }
-            }
-            //遍历superArray，将当前屏幕中拥有的header的section从数组中移除，得到一个当前屏幕中没有header的section数组
-            //正常情况下，随着手指往上移，header脱离屏幕会被系统回收而cell尚在，也会触发该方法
-            for (UICollectionViewLayoutAttributes *attributes in superArray) {
-                //如果当前的元素是一个header，将header所在的section从数组中移除
-                if ([attributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader]) {
-                    [noneHeaderSections removeIndex:attributes.indexPath.section];
-                }
-            }
-            //遍历当前屏幕中没有header的section数组
-            [noneHeaderSections enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop){
-                if ([self.collectionView numberOfItemsInSection:idx] > 0) {
-                    //取到当前section中第一个item的indexPath
-                    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:idx];
-                    //获取当前section在正常情况下已经离开屏幕的header结构信息
-                    UICollectionViewLayoutAttributes *attrHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:indexPath];
-                    //如果当前分区确实有因为离开屏幕而被系统回收的header
-                    if (attrHeader != nil && !CGSizeEqualToSize(attrHeader.size, CGSizeZero)) {
-                        //将该header结构信息重新加入到superArray中去
-                        [superArray addObject:attrHeader];
-                    }
-                }
-            }];
-        }
-        for (UICollectionViewLayoutAttributes *attrItem in superArray) {
-            NSInteger section = attrItem.indexPath.section;
-            if (attrItem.representedElementKind != nil) {
-                // Section Header
-                if ([attrItem.representedElementKind isEqualToString:UICollectionElementKindSectionHeader]) {
-                    //取最大
-                    CGFloat beginY = [[self.prepareArray[section] objectForKey:kHeaderBeginY] floatValue];
-                    if (useSystem) {
-                        NSLog(@"beginY1[%@]:%f",@(section),beginY);
-                        //获取当前header的frame
-                        CGRect irect = attrItem.frame;
-                        irect.origin.y = beginY;
-                        attrItem.frame = irect;
-                        attrItem.zIndex = 1024;
-                    }else {
-                        NSLog(@"beginY2[%@]:%f",@(section),beginY);
-                        //滑动偏移
-                        CGFloat offset;
-                        if (![self navigationBarTranslucent]) {
-                            offset = self.collectionView.contentOffset.y;
-                        }else {
-                            if (@available(iOS 11.0, *)) {
-                                UIEdgeInsets insets = [[UIApplication sharedApplication] delegate].window.safeAreaInsets;
-                                offset = self.collectionView.contentOffset.y + MAX(insets.top, 20.0) + 44.0;
-                            }else {
-                                offset = self.collectionView.contentOffset.y + 64.0;
-                            }
-                        }
-                        //取最大
-                        CGFloat maxY = MAX(offset, beginY);
-                        //获取当前header的frame
-                        CGRect irect = attrItem.frame;
-                        irect.origin.y = maxY;
-                        attrItem.frame = irect;
-                        attrItem.zIndex = 1024;
-                    }
-                }else {
-                    // Section Footer
-                    CGFloat beginY = [[self.prepareArray[section] objectForKey:kFooterBeginY] floatValue];
-                    CGRect irect = attrItem.frame;
-                    irect.origin.y = beginY;
-                    attrItem.frame = irect;
-                }
-            }else {
-                // Section Cells
-                id items = self.prepareArray[section];
-                attrItem.frame = CGRectFromString([items[kItems] objectAtIndex:attrItem.indexPath.row]);
-            }
-        }
-    }
-    return [superArray copy];
-}
-
-- (nullable UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath {
-    return [super layoutAttributesForItemAtIndexPath:indexPath];
-}
-- (nullable UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath {
-    return [super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath];
-}
-- (nullable UICollectionViewLayoutAttributes *)layoutAttributesForDecorationViewOfKind:(NSString*)elementKind atIndexPath:(NSIndexPath *)indexPath {
-    return [super layoutAttributesForDecorationViewOfKind:elementKind atIndexPath:indexPath];
-}
-
-#pragma mark -
-
-- (CGSize)collectionViewContentSize {
-    id last = [self.prepareArray lastObject];
-    CGFloat height = [last[kMaxHeight] floatValue];
-    CGSize size = [super collectionViewContentSize];
-    NSLog(@"size1:%@",NSStringFromCGSize(size));
-    size.height = height;
-    NSLog(@"size2:%@",NSStringFromCGSize(size));
-    return size;
-}
-
-- (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds {
-    if (@available(iOS 9, *)) {
-        return YES;
-    }else {
-        return YES;
-    }
-    return YES;
-}
-
-#pragma mark - Private Methods
-
-- (void)beginOffsetYOfSection:(NSInteger)section {
     CGFloat offsetY = 0.0;
     CGFloat lastY = 0.0;
-    for (NSInteger i=0; i<section; i++) {
+    for (NSInteger i=0; i<sections; i++) {
         @autoreleasepool {
             NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
             [dict setValue:[NSNumber numberWithFloat:0.0] forKey:kHeaderBeginY];
@@ -294,7 +154,6 @@
                             NSLog(@"=B=[%@]min:%f==%@", @(j), min, NSStringFromCGRect(rect));
                             [tmpHeight replaceObjectAtIndex:index withObject:[NSNumber numberWithFloat:min]];
                         }
-                        NSLog(@"=C=%@",tmpHeight);
                     }else {
                         [array addObject:NSStringFromCGRect(CGRectZero)];
                         lastIndex = j;
@@ -332,10 +191,157 @@
             [self.prepareArray replaceObjectAtIndex:i withObject:[dict copy]];
         }
     }
-    NSLog(@"offsetY[%@]:%f=%@",@(section),offsetY,self.prepareArray);
+    NSLog(@"prepare section[%@]:%f=%@",@(sections),offsetY,self.prepareArray);
+}
+
+#pragma mark -
+
+- (nullable NSArray<__kindof UICollectionViewLayoutAttributes *> *)layoutAttributesForElementsInRect:(CGRect)rect {
+    NSArray *array = [super layoutAttributesForElementsInRect:rect];
+    NSLog(@"layoutAttributesForElementsInRect:%@",array);
+    NSMutableArray *superArray = [[NSMutableArray alloc] initWithArray:array copyItems:YES];
+    @autoreleasepool {
+        BOOL useSystem;
+        if (@available(iOS 9, *)) {
+            //Header是否悬浮
+            if (self.sectionHeadersPinToVisibleBounds) {
+                useSystem = YES;
+            }else {
+                useSystem = NO;
+            }
+        }else {
+            useSystem = NO;
+        }
+        if (!useSystem) {
+            //创建存索引的数组，无符号（正整数），无序（不能通过下标取值），不可重复（重复的话会自动过滤）
+            NSMutableIndexSet *noneHeaderSections = [NSMutableIndexSet indexSet];
+            //遍历superArray，得到一个当前屏幕中所有的section数组
+            for (UICollectionViewLayoutAttributes *attributes in superArray) {
+                //如果当前的元素分类是一个cell，将cell所在的分区section加入数组，重复的话会自动过滤
+                if (attributes.representedElementCategory == UICollectionElementCategoryCell) {
+                    [noneHeaderSections addIndex:attributes.indexPath.section];
+                }
+            }
+            //遍历superArray，将当前屏幕中拥有的header的section从数组中移除，得到一个当前屏幕中没有header的section数组
+            //正常情况下，随着手指往上移，header脱离屏幕会被系统回收而cell尚在，也会触发该方法
+            for (UICollectionViewLayoutAttributes *attributes in superArray) {
+                //如果当前的元素是一个header，将header所在的section从数组中移除
+                if ([attributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader]) {
+                    [noneHeaderSections removeIndex:attributes.indexPath.section];
+                }
+            }
+            //遍历当前屏幕中没有header的section数组
+            [noneHeaderSections enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop){
+                if ([self.collectionView numberOfItemsInSection:idx] > 0) {
+                    //取到当前section中第一个item的indexPath
+                    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:idx];
+                    //获取当前section在正常情况下已经离开屏幕的header结构信息
+                    UICollectionViewLayoutAttributes *attrHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:indexPath];
+                    //如果当前分区确实有因为离开屏幕而被系统回收的header
+                    if (attrHeader != nil && !CGSizeEqualToSize(attrHeader.size, CGSizeZero)) {
+                        //将该header结构信息重新加入到superArray中去
+                        [superArray addObject:attrHeader];
+                    }
+                }
+            }];
+        }
+        for (UICollectionViewLayoutAttributes *attrItem in superArray) {
+            NSInteger section = attrItem.indexPath.section;
+            if (attrItem.representedElementKind != nil) {
+                // Section Header
+                if ([attrItem.representedElementKind isEqualToString:UICollectionElementKindSectionHeader]) {
+                    CGFloat beginY = [[self.prepareArray[section] objectForKey:kHeaderBeginY] floatValue];
+                    NSLog(@"beginY[%@]:%f",@(section),beginY);
+                    //滑动偏移
+                    CGFloat offset = [self scrollViewOffsetY];
+                    //取最大
+                    CGFloat maxY = beginY;
+                    if (@available(iOS 9, *)) {
+                        //Header是否悬浮
+                        if (self.sectionHeadersPinToVisibleBounds) {
+                            maxY = MAX(offset, beginY);
+                        }
+                    }
+                    //获取当前header的frame
+                    CGRect irect = attrItem.frame;
+                    irect.origin.y = maxY;
+                    attrItem.frame = irect;
+                    attrItem.zIndex = 1024;
+                }else {
+                    // Section Footer
+                    CGFloat beginY = [[self.prepareArray[section] objectForKey:kFooterBeginY] floatValue];
+                    CGRect irect = attrItem.frame;
+                    irect.origin.y = beginY;
+                    attrItem.frame = irect;
+                }
+            }else {
+                // Section Cells
+                id items = self.prepareArray[section];
+                attrItem.frame = CGRectFromString([items[kItems] objectAtIndex:attrItem.indexPath.row]);
+            }
+        }
+    }
+    return [superArray copy];
+}
+
+#pragma mark -
+
+- (nullable UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath {
+    return [super layoutAttributesForItemAtIndexPath:indexPath];
+}
+- (nullable UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath {
+    NSLog(@"Supplementary[%@]==offset:%@==attributes:%@",@(indexPath.section),NSStringFromCGPoint(self.collectionView.contentOffset),[super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath]);
+    return [super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath];
+}
+- (nullable UICollectionViewLayoutAttributes *)layoutAttributesForDecorationViewOfKind:(NSString*)elementKind atIndexPath:(NSIndexPath *)indexPath {
+    NSLog(@"Decoration:%@",[super layoutAttributesForDecorationViewOfKind:elementKind atIndexPath:indexPath]);
+    return [super layoutAttributesForDecorationViewOfKind:elementKind atIndexPath:indexPath];
+}
+
+#pragma mark -
+
+- (CGSize)collectionViewContentSize {
+    id last = [self.prepareArray lastObject];
+    CGFloat height = [last[kMaxHeight] floatValue];
+    CGSize size = [super collectionViewContentSize];
+    NSLog(@"size1:%@",NSStringFromCGSize(size));
+    size.height = height;
+    NSLog(@"size2:%@",NSStringFromCGSize(size));
+    return size;
+}
+
+// 滚动视图，改变Bounds后，之前的layout是否失效
+// YES：失效，从新调用布局
+// NO：没有失效，沿用之前的布局
+- (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds {
+    if (@available(iOS 9, *)) {
+        //Header是否悬浮
+        if (self.sectionHeadersPinToVisibleBounds) {
+            return YES;
+        }else {
+            return NO;
+        }
+    }else {
+        return NO;
+    }
 }
 
 #pragma mark - Delegate Method
+
+- (CGFloat)scrollViewOffsetY {
+    CGFloat offset;
+    if (![self navigationBarTranslucent]) {
+        offset = self.collectionView.contentOffset.y;
+    }else {
+        if (@available(iOS 11.0, *)) {
+            UIEdgeInsets insets = [[UIApplication sharedApplication] delegate].window.safeAreaInsets;
+            offset = self.collectionView.contentOffset.y + MAX(insets.top, 20.0) + 44.0;
+        }else {
+            offset = self.collectionView.contentOffset.y + 64.0;
+        }
+    }
+    return offset;
+}
 
 - (BOOL)navigationBarTranslucent {
     BOOL translucent;
