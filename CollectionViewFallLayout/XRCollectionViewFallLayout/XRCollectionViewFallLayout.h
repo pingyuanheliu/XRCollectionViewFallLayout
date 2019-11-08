@@ -28,6 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 // 瀑布流代理
 @property (nonatomic, weak, nullable) id<XRCollectionViewDelegateFallLayout> fallDelegate;
+// 悬浮Header
+@property (nonatomic, assign, getter=isSuspendHeader)BOOL suspendHeader;
 
 @end
 

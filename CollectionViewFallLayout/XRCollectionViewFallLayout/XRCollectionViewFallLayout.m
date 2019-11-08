@@ -33,6 +33,7 @@
      },
  ]
  */
+@property (nonatomic, assign, getter=isPrepared) BOOL prepared;
 @property (nonatomic, strong) NSMutableArray *prepareArray;
 
 @end
@@ -46,6 +47,7 @@
 {
     self = [super init];
     if (self) {
+        self.prepared = NO;
         self.prepareArray = [[NSMutableArray alloc] init];
     }
     return self;
@@ -73,6 +75,7 @@
 - (void)prepareLayout {
     [super prepareLayout];
     NSLog(@"==prepareLayout==");
+    self.prepared = NO;
     [self.prepareArray removeAllObjects];
     NSInteger sections = [self.collectionView numberOfSections];
     CGFloat offsetY = 0.0;
@@ -103,7 +106,7 @@
             NSIndexPath *fIndexPath = [NSIndexPath indexPathForItem:0 inSection:i];
             //Header
             UICollectionViewLayoutAttributes *attrHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:fIndexPath];
-            NSLog(@"attrHeader[%@]:%@",@(i),NSStringFromCGRect(attrHeader.frame));
+            NSLog(@"prepare attrHeader[%@]:%@",@(i),NSStringFromCGRect(attrHeader.frame));
             if (attrHeader != nil && !CGSizeEqualToSize(attrHeader.size, CGSizeZero)) {
                 offsetY += attrHeader.frame.size.height;
             }
@@ -134,7 +137,6 @@
                             //使用瀑布流
                             id imin = [tmpHeight valueForKeyPath:@"@min.self"];
                             CGFloat min = [imin floatValue];
-                            NSLog(@"=A=[%@]min:%f==%f==%f", @(j), min, lastY, offsetY);
                             CGRect rect = attrItem.frame;
                             NSInteger index = [tmpHeight indexOfObject:imin];
                             if (index != j%column) {
@@ -151,7 +153,6 @@
                             }
                             [array addObject:NSStringFromCGRect(rect)];
                             min += rect.size.height + [self minimumLineSpacingForSectionAtIndex:i];
-                            NSLog(@"=B=[%@]min:%f==%@", @(j), min, NSStringFromCGRect(rect));
                             [tmpHeight replaceObjectAtIndex:index withObject:[NSNumber numberWithFloat:min]];
                         }
                     }else {
@@ -163,11 +164,9 @@
             [dict setValue:array forKey:kItems];
             if (lastIndex != -1) {
                 //最后一个item
-                NSIndexPath *lIndexPath = [NSIndexPath indexPathForItem:lastIndex inSection:i];
-                UICollectionViewLayoutAttributes *attrItem = [self layoutAttributesForItemAtIndexPath:lIndexPath];
-                if (attrItem != nil && !CGSizeEqualToSize(attrItem.size, CGSizeZero)) {
-                    offsetY = attrItem.frame.origin.y + attrItem.frame.size.height;
-                }
+                NSString *string = [array lastObject];
+                CGRect tRect = CGRectFromString(string);
+                offsetY = tRect.origin.y + tRect.size.height;
             }else {
                 CGFloat maxH = 0.0;
                 for (NSString *string in array) {
@@ -192,25 +191,21 @@
         }
     }
     NSLog(@"prepare section[%@]:%f=%@",@(sections),offsetY,self.prepareArray);
+    self.prepared = YES;
 }
 
 #pragma mark -
 
 - (nullable NSArray<__kindof UICollectionViewLayoutAttributes *> *)layoutAttributesForElementsInRect:(CGRect)rect {
     NSArray *array = [super layoutAttributesForElementsInRect:rect];
-    NSLog(@"layoutAttributesForElementsInRect:%@",array);
+    NSLog(@"layoutAttributesForElementsInRect:%@",@([array count]));
     NSMutableArray *superArray = [[NSMutableArray alloc] initWithArray:array copyItems:YES];
     @autoreleasepool {
         BOOL useSystem;
-        if (@available(iOS 9, *)) {
-            //Header是否悬浮
-            if (self.sectionHeadersPinToVisibleBounds) {
-                useSystem = YES;
-            }else {
-                useSystem = NO;
-            }
-        }else {
+        if (self.isSuspendHeader) {
             useSystem = NO;
+        }else {
+            useSystem = YES;
         }
         if (!useSystem) {
             //创建存索引的数组，无符号（正整数），无序（不能通过下标取值），不可重复（重复的话会自动过滤）
@@ -237,6 +232,7 @@
                     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:idx];
                     //获取当前section在正常情况下已经离开屏幕的header结构信息
                     UICollectionViewLayoutAttributes *attrHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:indexPath];
+                    NSLog(@"InRect attrHeader[%@]:%@",@(idx),NSStringFromCGRect(attrHeader.frame));
                     //如果当前分区确实有因为离开屏幕而被系统回收的header
                     if (attrHeader != nil && !CGSizeEqualToSize(attrHeader.size, CGSizeZero)) {
                         //将该header结构信息重新加入到superArray中去
@@ -250,21 +246,9 @@
             if (attrItem.representedElementKind != nil) {
                 // Section Header
                 if ([attrItem.representedElementKind isEqualToString:UICollectionElementKindSectionHeader]) {
-                    CGFloat beginY = [[self.prepareArray[section] objectForKey:kHeaderBeginY] floatValue];
-                    NSLog(@"beginY[%@]:%f",@(section),beginY);
-                    //滑动偏移
-                    CGFloat offset = [self scrollViewOffsetY];
-                    //取最大
-                    CGFloat maxY = beginY;
-                    if (@available(iOS 9, *)) {
-                        //Header是否悬浮
-                        if (self.sectionHeadersPinToVisibleBounds) {
-                            maxY = MAX(offset, beginY);
-                        }
-                    }
                     //获取当前header的frame
                     CGRect irect = attrItem.frame;
-                    irect.origin.y = maxY;
+                    irect.origin.y = [self maxOffsetY:section];
                     attrItem.frame = irect;
                     attrItem.zIndex = 1024;
                 }else {
@@ -291,6 +275,11 @@
 }
 - (nullable UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath {
     NSLog(@"Supplementary[%@]==offset:%@==attributes:%@",@(indexPath.section),NSStringFromCGPoint(self.collectionView.contentOffset),[super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath]);
+    if (self.prepared) {
+        NSLog(@"prepared YES");
+    }else {
+        NSLog(@"prepared NO");
+    }
     return [super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath];
 }
 - (nullable UICollectionViewLayoutAttributes *)layoutAttributesForDecorationViewOfKind:(NSString*)elementKind atIndexPath:(NSIndexPath *)indexPath {
@@ -314,19 +303,40 @@
 // YES：失效，从新调用布局
 // NO：没有失效，沿用之前的布局
 - (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds {
-    if (@available(iOS 9, *)) {
-        //Header是否悬浮
-        if (self.sectionHeadersPinToVisibleBounds) {
-            return YES;
-        }else {
-            return NO;
-        }
+    if (self.isSuspendHeader) {
+        return YES;
     }else {
+        if (@available(iOS 9, *)) {
+            //Header是否悬浮
+            if (self.sectionHeadersPinToVisibleBounds) {
+                return YES;
+            }
+        }
         return NO;
     }
 }
 
 #pragma mark - Delegate Method
+
+- (CGFloat)maxOffsetY:(NSInteger)section {
+    CGFloat beginY = [[self.prepareArray[section] objectForKey:kHeaderBeginY] floatValue];
+    NSLog(@"beginY[%@]:%f",@(section),beginY);
+    //滑动偏移
+    CGFloat offset = [self scrollViewOffsetY];
+    //取最大
+    CGFloat maxY = beginY;
+    if (@available(iOS 9, *)) {
+        //Header是否悬浮
+        if (self.isSuspendHeader) {
+            maxY = MAX(offset, beginY);
+        }else {
+            if (self.sectionHeadersPinToVisibleBounds) {
+                maxY = MAX(offset, beginY);
+            }
+        }
+    }
+    return maxY;
+}
 
 - (CGFloat)scrollViewOffsetY {
     CGFloat offset;
