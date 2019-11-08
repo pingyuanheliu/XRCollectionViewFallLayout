@@ -38,7 +38,7 @@ Pod::Spec.new do |spec|
   #  Popular ones are 'MIT', 'BSD' and 'Apache License, Version 2.0'.
   #
 
-  spec.license      = "MIT (example)"
+  spec.license      = "MIT"
   # spec.license      = { :type => "MIT", :file => "FILE_LICENSE" }
 
 
@@ -52,9 +52,9 @@ Pod::Spec.new do |spec|
   #  profile URL.
   #
 
-  spec.author             = { "LL" => "15817490772@139.com" }
+  spec.author             = { "LL" => "1670978751@qq.com" }
   # Or just: spec.author    = "LL"
-  # spec.authors            = { "LL" => "15817490772@139.com" }
+  # spec.authors            = { "LL" => "1670978751@qq.com" }
   # spec.social_media_url   = "https://twitter.com/LL"
 
   # ――― Platform Specifics ――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
