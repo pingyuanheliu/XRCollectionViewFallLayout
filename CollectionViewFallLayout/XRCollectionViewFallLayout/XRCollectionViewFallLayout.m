@@ -74,7 +74,6 @@
 
 - (void)prepareLayout {
     [super prepareLayout];
-    NSLog(@"==prepareLayout==");
     self.prepared = NO;
     [self.prepareArray removeAllObjects];
     NSInteger sections = [self.collectionView numberOfSections];
@@ -106,7 +105,6 @@
             NSIndexPath *fIndexPath = [NSIndexPath indexPathForItem:0 inSection:i];
             //Header
             UICollectionViewLayoutAttributes *attrHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:fIndexPath];
-            NSLog(@"prepare attrHeader[%@]:%@",@(i),NSStringFromCGRect(attrHeader.frame));
             if (attrHeader != nil && !CGSizeEqualToSize(attrHeader.size, CGSizeZero)) {
                 offsetY += attrHeader.frame.size.height;
             }
@@ -185,12 +183,10 @@
             if (attrFooter != nil && !CGSizeEqualToSize(attrFooter.size, CGSizeZero)) {
                 offsetY += attrFooter.frame.size.height;
             }
-            NSLog(@"offsetY[%@]:%@==%f",@(i),@(lastIndex),offsetY);
             [dict setValue:[NSNumber numberWithFloat:offsetY] forKey:kMaxHeight];
             [self.prepareArray replaceObjectAtIndex:i withObject:[dict copy]];
         }
     }
-    NSLog(@"prepare section[%@]:%f=%@",@(sections),offsetY,self.prepareArray);
     self.prepared = YES;
 }
 
@@ -198,7 +194,6 @@
 
 - (nullable NSArray<__kindof UICollectionViewLayoutAttributes *> *)layoutAttributesForElementsInRect:(CGRect)rect {
     NSArray *array = [super layoutAttributesForElementsInRect:rect];
-    NSLog(@"layoutAttributesForElementsInRect:%@",@([array count]));
     NSMutableArray *superArray = [[NSMutableArray alloc] initWithArray:array copyItems:YES];
     @autoreleasepool {
         BOOL useSystem;
@@ -232,7 +227,6 @@
                     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:idx];
                     //获取当前section在正常情况下已经离开屏幕的header结构信息
                     UICollectionViewLayoutAttributes *attrHeader = [self layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:indexPath];
-                    NSLog(@"InRect attrHeader[%@]:%@",@(idx),NSStringFromCGRect(attrHeader.frame));
                     //如果当前分区确实有因为离开屏幕而被系统回收的header
                     if (attrHeader != nil && !CGSizeEqualToSize(attrHeader.size, CGSizeZero)) {
                         //将该header结构信息重新加入到superArray中去
@@ -274,16 +268,9 @@
     return [super layoutAttributesForItemAtIndexPath:indexPath];
 }
 - (nullable UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath {
-    NSLog(@"Supplementary[%@]==offset:%@==attributes:%@",@(indexPath.section),NSStringFromCGPoint(self.collectionView.contentOffset),[super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath]);
-    if (self.prepared) {
-        NSLog(@"prepared YES");
-    }else {
-        NSLog(@"prepared NO");
-    }
     return [super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath];
 }
 - (nullable UICollectionViewLayoutAttributes *)layoutAttributesForDecorationViewOfKind:(NSString*)elementKind atIndexPath:(NSIndexPath *)indexPath {
-    NSLog(@"Decoration:%@",[super layoutAttributesForDecorationViewOfKind:elementKind atIndexPath:indexPath]);
     return [super layoutAttributesForDecorationViewOfKind:elementKind atIndexPath:indexPath];
 }
 
@@ -293,9 +280,7 @@
     id last = [self.prepareArray lastObject];
     CGFloat height = [last[kMaxHeight] floatValue];
     CGSize size = [super collectionViewContentSize];
-    NSLog(@"size1:%@",NSStringFromCGSize(size));
     size.height = height;
-    NSLog(@"size2:%@",NSStringFromCGSize(size));
     return size;
 }
 
@@ -320,7 +305,6 @@
 
 - (CGFloat)maxOffsetY:(NSInteger)section {
     CGFloat beginY = [[self.prepareArray[section] objectForKey:kHeaderBeginY] floatValue];
-    NSLog(@"beginY[%@]:%f",@(section),beginY);
     //滑动偏移
     CGFloat offset = [self scrollViewOffsetY];
     //取最大
@@ -394,7 +378,6 @@
     }else {
         inset = self.sectionInset;
     }
-    NSLog(@"inset[%@]:%@",@(section),NSStringFromUIEdgeInsets(inset));
     return inset;
 }
 
